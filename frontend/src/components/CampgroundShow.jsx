@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import API_BASE_URL from '../config'
 
 function CampgroundShow() {
   const { id } = useParams()
@@ -28,7 +29,7 @@ function CampgroundShow() {
 
   const fetchCampground = async () => {
     try {
-      const response = await fetch(`/api/campgrounds/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/campgrounds/${id}`, {
         credentials: 'include'
       })
       const data = await response.json()
@@ -89,7 +90,7 @@ function CampgroundShow() {
   const handleReviewSubmit = async (e) => {
     e.preventDefault()
     try {
-      const response = await fetch(`/api/campgrounds/${id}/reviews`, {
+      const response = await fetch(`${API_BASE_URL}/api/campgrounds/${id}/reviews`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -121,7 +122,7 @@ function CampgroundShow() {
     if (!window.confirm('Are you sure you want to delete this review?')) return
 
     try {
-      const response = await fetch(`/api/campgrounds/${id}/reviews/${reviewId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/campgrounds/${id}/reviews/${reviewId}`, {
         method: 'DELETE',
         credentials: 'include'
       })
@@ -141,7 +142,7 @@ function CampgroundShow() {
     if (!window.confirm('Are you sure you want to delete this campground?')) return
 
     try {
-      const response = await fetch(`/api/campgrounds/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/campgrounds/${id}`, {
         method: 'DELETE',
         credentials: 'include'
       })

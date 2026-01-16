@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import API_BASE_URL from '../config'
 
 function NewCampground() {
   const { user } = useAuth()
@@ -77,7 +78,7 @@ function NewCampground() {
         formDataToSend.append('image', image)
       })
 
-      const response = await fetch(`/api/campgrounds`, {
+      const response = await fetch(`${API_BASE_URL}/api/campgrounds`, {
         method: 'POST',
         credentials: 'include',
         body: formDataToSend

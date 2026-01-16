@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import API_BASE_URL from '../config'
 
 function EditCampground() {
   const { id } = useParams()
@@ -43,7 +44,7 @@ function EditCampground() {
 
   const fetchCampground = async () => {
     try {
-      const response = await fetch(`/api/campgrounds/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/campgrounds/${id}`, {
         credentials: 'include'
       })
       const data = await response.json()
@@ -131,7 +132,7 @@ function EditCampground() {
         })
       }
 
-      const response = await fetch(`/api/campgrounds/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/campgrounds/${id}`, {
         method: 'PUT',
         credentials: 'include',
         body: formDataToSend

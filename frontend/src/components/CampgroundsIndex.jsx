@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
+import API_BASE_URL from '../config'
 
 function CampgroundsIndex() {
   const [campgrounds, setCampgrounds] = useState([])
@@ -19,7 +20,7 @@ function CampgroundsIndex() {
 
   const fetchCampgrounds = async () => {
     try {
-      const response = await fetch(`/api/campgrounds`, {
+      const response = await fetch(`${API_BASE_URL}/api/campgrounds`, {
         credentials: 'include'
       })
       const data = await response.json()

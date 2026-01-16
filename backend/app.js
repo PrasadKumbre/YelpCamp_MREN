@@ -1,100 +1,123 @@
-if (process.env.NODE_ENV !== "production") {
-    require('dotenv').config();
-}
+// ✅ Load env always (Render also uses env vars)
+require("dotenv").config();
 
-const express = require('express');
-const mongoose = require('mongoose');
-const path = require('path');
-const cors = require('cors');
-const helmet = require('helmet');
-const MongoStore = require('connect-mongo');
-const passport = require('passport');
-const LocalStrategy = require('passport-local');
-const User = require('./models/user');
-const apiRoutes = require('./routes/api');
-const session = require('express-session');
+const express = require("express");
+const mongoose = require("mongoose");
+const cors = require("cors");
+const helmet = require("helmet");
+const MongoStore = require("connect-mongo");
+const passport = require("passport");
+const LocalStrategy = require("passport-local");
+const session = require("express-session");
+
+const User = require("./models/user");
+const apiRoutes = require("./routes/api");
+
 const port = process.env.PORT || 8080;
-// Initialize express app
 const app = express();
 
+// ✅ Required for Render / proxies (VERY IMPORTANT)
+app.set("trust proxy", 1);
+
+// ✅ Mongo URL from env
 const mongoURL = process.env.MONGO_URL;
 
-mongoose.connect(mongoURL)
-    .then(() => {
-        console.log('Connected to MongoDB!');
-    })
-    .catch((err) => {
-        console.error('MongoDB connection error:', err);
-    });
+// ✅ connect MongoDB
+mongoose
+    .connect(mongoURL)
+    .then(() => console.log("✅ Connected to MongoDB!"))
+    .catch((err) => console.error("❌ MongoDB connection error:", err));
 
-// Middleware to parse form data
+// Middleware
 app.use(express.urlencoded({ extended: true }));
-// Middleware to parse JSON data
 app.use(express.json());
 
-// CORS configuration
-app.use(cors({
-    origin: process.env.FRONTEND_URL,
-    credentials: true
-}));
+// ✅ CORS configuration (IMPORTANT)
+const allowedOrigins = [
+    process.env.FRONTEND_URL,     // render frontend URL
+    "http://localhost:5173",      // local dev Vite
+    "http://localhost:3000",      // local dev React
+].filter(Boolean);
 
+app.use(
+    cors({
+        origin: function (origin, callback) {
+            // allow requests with no origin (like Postman)
+            if (!origin) return callback(null, true);
+
+            if (allowedOrigins.includes(origin)) {
+                callback(null, true);
+            } else {
+                callback(new Error("❌ Not allowed by CORS: " + origin));
+            }
+        },
+        credentials: true,
+    })
+);
+
+// ✅ Session Store
 const store = MongoStore.create({
     mongoUrl: mongoURL,
     touchAfter: 24 * 60 * 60,
     crypto: {
-        secret: 'thisshouldbeabettersecret!'
-    }
+        secret: process.env.STORE_SECRET || "storeSecretFallback",
+    },
 });
 
-// Session configuration
+store.on("error", function (e) {
+    console.log("❌ Session store error:", e);
+});
+
+// ✅ Session configuration
 const sessionConfig = {
     store,
-    name: 'Session',
-    secret: 'TheirShouldASecretKeyFromENVFill', // Use environment variable in production
+    name: "session",
+    secret: process.env.SECRET || "secretFallback",
     resave: false,
-    saveUninitialized: true,
+    saveUninitialized: false, // ✅ IMPORTANT (change from true)
     cookie: {
         httpOnly: true,
-        //secure:true,
-        expires: Date.now() + 1000 * 60 * 60 * 24 * 7, // Expires in 7 days
-        maxAge: 1000 * 60 * 60 * 24 * 7, // Max age is 7 days
-    }
-}
 
-// Use session middleware
+        // ✅ Render uses HTTPS → secure must be true in production
+        secure: process.env.NODE_ENV === "production",
+
+        // ✅ Cross-site cookie for separate frontend/backend domains
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+
+        expires: Date.now() + 1000 * 60 * 60 * 24 * 7,
+        maxAge: 1000 * 60 * 60 * 24 * 7,
+    },
+};
+
 app.use(session(sessionConfig));
 
-// Initialize Passport for authentication
+// ✅ Passport
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Use local strategy for Passport authentication
 passport.use(new LocalStrategy(User.authenticate()));
-
-// Configure Passport to serialize and deserialize users
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
+// ✅ Helmet
 app.use(helmet());
-// Note: CSP is less critical for API-only but good to keep if we serve client later. 
-// For now, simpler helmet defautls or previously configured CSP is fine.
-// Keeping strictly API focused:
 
-// API routes
-app.use('/api', apiRoutes);
+// ✅ API routes
+app.use("/api", apiRoutes);
 
-// Error handling middleware
+// ✅ Error handling middleware
 app.use((err, req, res, next) => {
-    const { statusCode = 500, message = 'Something went wrong :(' } = err;
+    console.error("❌ ERROR:", err);
+    const { statusCode = 500, message = "Something went wrong :(" } = err;
     res.status(statusCode).json({ success: false, error: message });
-})
+});
 
-// 404 Not Found handler
+// ✅ 404 Not Found handler
 app.use((req, res) => {
-    res.status(404).json({ success: false, error: 'Not Found' });
-})
+    res.status(404).json({ success: false, error: "Not Found" });
+});
 
-// Start the server
+// ✅ Start server
 app.listen(port, () => {
-    console.log(`Server is started on http://localhost:8080/`);
-})
+    console.log(`✅ Server started on port ${port}`);
+});
